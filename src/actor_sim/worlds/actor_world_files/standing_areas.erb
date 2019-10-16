@@ -1,0 +1,17 @@
+<%
+  # this file contains the locations (xy coordinates) for the standing areas where
+  # where people can stand
+  # here you can add new poses for sitting humans
+  # pose: [x, y, z, roll, pitch, yaw]
+
+  # standing areas coordinates
+  # standing area is rectangular in xy plane
+  # defined by min_xy point, and max_xy point
+  $standing_areas =
+  [
+  #  {:min => [-1, -1], :max => [1,1], :yaw => $pi, :n_humans=>2},
+  #  {:min => [2, 2 ],  :max => [5,5], :yaw => -$pi*0.5, :n_humans=>4},
+    {:min => [-26, 5], :max => [-24, 7], :yaw => $pi*0.5, :n_humans=>4},
+    {:min => [16, -4], :max => [18, -2], :yaw => -$pi*0.5, :n_humans=>3},
+  ];
+%>

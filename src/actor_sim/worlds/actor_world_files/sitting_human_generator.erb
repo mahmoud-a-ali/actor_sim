@@ -1,0 +1,54 @@
+<%
+  # this file generates code for a human sitting at a fixed pose.
+  # this file is adapted from the Servicesim pkg
+  # Required variables
+  # * $actor_name (string) Unique name for the actor
+  # * $actor_pose (array[6]) Pose for idling actor
+  # * $actor_skin (string) A skin Collada file from model://actor/meshes/
+  # * $actor_anim (string) An animation Collada file from model://actor/meshes/
+  # * $enable_collisions (boolean) True to enable actor collisions
+%>
+
+<actor name="<%= $actor_name %>">
+
+  <!-- Starting pose, nice for when the world is reset -->
+  <pose>
+    <%= $actor_pose[0] %>
+    <%= $actor_pose[1] %>
+    <%= $actor_pose[2] %>
+    <%= $actor_pose[3] %>
+    <%= $actor_pose[4] %>
+    <%= $actor_pose[5] %>
+  </pose>
+
+  <skin>
+    <filename>model://actor/meshes/<%= $actor_skin %></filename>
+  </skin>
+
+  <animation name="animation">
+    <filename>model://actor/meshes/<%= $actor_anim %></filename>
+  </animation>
+
+  <!-- Need one waypoint to idle at -->
+  <script>
+    <trajectory id='0' type='animation'>
+      <waypoint>
+        <time>100</time>
+          <pose>
+            <%= $actor_pose[0] %>
+            <%= $actor_pose[1] %>
+            <%= $actor_pose[2] %>
+            <%= $actor_pose[3] %>
+            <%= $actor_pose[4] %>
+            <%= $actor_pose[5] %>
+          </pose>
+      </waypoint>
+    </trajectory>
+  </script>
+
+  <!-- Enable collisions -->
+  <% if $enable_collisions %>
+    <%= fromFile(DIR + "/actor_collisions.erb") %>
+  <% end %>
+
+</actor>

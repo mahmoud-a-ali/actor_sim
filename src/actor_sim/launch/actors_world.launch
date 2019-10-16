@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+
+
+<arg name="sim_world" default="actors_world"/>
+<arg name="gui" default="true"/>
+
+
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find actor_sim)/worlds/$(arg sim_world).world"/>
+    <arg name="gui" value="$(arg gui)"/>
+  </include>
+
+
+</launch>

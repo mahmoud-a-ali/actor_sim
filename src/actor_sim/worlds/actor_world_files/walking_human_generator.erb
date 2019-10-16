@@ -1,0 +1,89 @@
+<%
+  # This file generates code for  walking humans that move along a given trajectory.
+  # this file is adapted from the Servicesim pkg
+  # Required variables
+  # * $actor_name (string) Unique name for the actor
+  # * $actor_skin (string) A skin Collada file from model://actor/meshes/
+  # * $actor_anim (string) An animation Collada file from model://actor/meshes/
+  # * $actor_velocity (double) Velocity for trajectory actors, in m/s
+  # * $actor_trajectory (array[array[6]]) Array or waypoint poses
+  # * $enable_collisions (boolean) True to enable actor collisions
+%>
+
+
+
+
+<%
+  if $enable_collisions
+%>
+<model name="<%= $actor_name %>_collision_model">
+  <pose>0 0 -100 0 0 0</pose>
+  <static>true</static>
+  <link name="link">
+    <collision name="link">
+      <pose>0 -0.18 0.05 0 <%= -$pi * 0.5 %> 0</pose>
+      <geometry>
+        <box>
+          <size>0.44 1.62 0.60</size>
+        </box>
+      </geometry>
+    </collision>
+  </link>
+</model>
+
+<% end %>
+
+<actor name="<%= $actor_name %>">
+
+  <!-- Starting pose, nice for when the world is reset -->
+  <pose>
+    <%= $actor_trajectory[0][0] %>
+    <%= $actor_trajectory[0][1] %>
+    <%= $actor_trajectory[0][2] %>
+    <%= $actor_trajectory[0][3] %>
+    <%= $actor_trajectory[0][4] %>
+    <%= $actor_trajectory[0][5] %>
+  </pose>
+
+  <skin>
+    <filename>model://actor/meshes/<%= $actor_skin %></filename>
+  </skin>
+
+  <animation name="animation">
+    <filename>model://actor/meshes/<%= $actor_anim %></filename>
+    <interpolate_x>true</interpolate_x>
+  </animation>
+
+  <plugin name="trajectory" filename="libTrajectoryActorPlugin.so">
+    <%
+      for pose in $actor_trajectory
+    %>
+      <target>
+        <%= pose[0] %>
+        <%= pose[1] %>
+        <%= pose[2] %>
+        <%= pose[3] %>
+        <%= pose[4] %>
+        <%= pose[5] %>
+      </target>
+    <% end %>
+
+    <velocity><%= $actor_velocity %></velocity>
+    <obstacle_margin>1.5</obstacle_margin>
+    <obstacle><%= $robot_name %></obstacle>
+
+  </plugin>
+
+  <!-- Enable collisions -->
+  <% if $enable_collisions %>
+    <plugin name="attach_model" filename="libAttachModelPlugin.so">
+      <link>
+        <link_name><%= $actor_name %>_pose</link_name>
+        <model>
+          <model_name><%= $actor_name %>_collision_model</model_name>
+        </model>
+      </link>
+    </plugin>
+  <% end %>
+
+</actor>

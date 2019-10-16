@@ -1,0 +1,108 @@
+<%
+  # this file generates code for standing humans
+  # this file is adapted from the Servicesim pkg
+  # Required variables
+  # * $human_name (string)
+  # * $standing_human_count (number)
+
+
+# Helper function to import another erb file
+def fromFile filename
+  return ERB.new(File.read(filename), nil, nil, '_sub01').result(binding)
+end
+
+
+
+  # Human model names
+  types =
+  [
+    'casual_female',
+    'casual_male',
+    'casual_male2',
+    'elegant_female',
+    'elegant_female2',
+    'elegant_male',
+  ]
+
+  # add files that contains definition of standing areas
+  fromFile(DIR + "/" + "standing_areas.erb")
+
+
+
+
+
+
+
+used_poses = []
+  tolerance = 1.0
+  for area in $standing_areas
+    for i in (1..area[:n_humans])
+    name = $human_name + '_' + rand(10000..99999).to_s()
+    type = types.sample()
+
+
+
+    pose = Vector[]
+    loop do
+      #area = $standing_areas.sample()
+
+      pose = Vector[
+        area[:min][0] + (area[:max][0] - area[:min][0]) * rand(0.0..1.0),
+        area[:min][1] + (area[:max][1] - area[:min][1]) * rand(0.0..1.0),
+        0,
+        0,
+        0,
+        area[:yaw] + 0.8*i,
+      ]
+
+      used = false
+      for used_pose in used_poses
+        if (pose - used_pose).magnitude() < tolerance
+          used = true
+          break
+        end
+      end
+
+      break if not used
+    end
+
+
+    # Store pose so we don't repeat it
+    used_poses.push(pose)
+%>
+
+
+<actor name="<%= name %>">
+  <pose>
+    <%= pose[0] %>
+    <%= pose[1] %>
+    <%= pose[2] %>
+    <%= pose[3] %>
+    <%= pose[4] %>
+    <%= pose[5] %>
+  </pose>
+
+  <link name="link">
+    <collision name="box">
+      <pose>0 0 0.9 0 0 0</pose>
+      <geometry>
+        <box>
+          <size>0.76 0.33 1.77</size>
+        </box>
+      </geometry>
+    </collision>
+    <visual name="visual">
+      <pose>0 0 0.02 0.04 0 0</pose>
+      <geometry>
+        <mesh>
+          <uri>model://<%= type %>/meshes/<%= type %>.dae</uri>
+        </mesh>
+      </geometry>
+    </visual>
+  </link>
+
+</actor>
+
+<% end %>
+<% end %>
+

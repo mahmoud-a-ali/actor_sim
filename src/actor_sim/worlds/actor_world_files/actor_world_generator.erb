@@ -1,0 +1,246 @@
+<%
+  # actor world generator
+  # this file generates a gzaebo world to insert walking/standing/sitting humans
+  # inside the environment
+  # you need to specify (in the corresponding files) :
+  # 1. XY-coordination for each sitting person and his/her direction (yaw)
+  # 2. XY-coordinates for the standing areas where people wil stand,
+  #    and number of humans in each area
+  # 3. different trajectories for walking humans and
+  #    number of humans that should follow each trajectory
+  # then this erb file will generate the corresponding gazebo world
+
+
+
+
+############### define constants and functions ###############
+#current directory path
+DIR = File.dirname(__FILE__)
+
+# PI
+$pi = Math::PI
+
+# Count to ensure unique names
+$count = 0
+
+# Prefix for all human names (guest and non-guest)
+$human_name = 'human'
+
+# Helper function to import another erb file
+def fromFile filename
+  return ERB.new(File.read(filename), nil, nil, '_sub01').result(binding)
+end
+
+
+############### TRANSFORMATION MATRIX ###############
+  require 'matrix'
+  # Helper function to create a 2D transform matrix
+  def TMatrix(_x, _y, _yaw)
+    return Matrix.rows([
+             [Math::cos(_yaw), -Math::sin(_yaw), _x],
+             [Math::sin(_yaw),  Math::cos(_yaw), _y],
+             [0, 0, 1]
+           ])
+  end
+
+############### load some files #############
+### Skin files under model://actor/meshes
+skins =
+[
+  "SKIN_man_blue_shirt.dae",
+  "SKIN_man_green_shirt.dae",
+  "SKIN_man_red_shirt.dae"
+]
+
+
+############### sitting_actor_pose file ###############
+fromFile(DIR + "/" + "sitting_human_poses.erb")
+
+
+############### walking trajectories file ###############
+fromFile(DIR + "/" + "walking_trajectories.erb")
+actor_velocities=[]
+actor_trajectories = []
+total_walking_actors= 0
+for trj in $trajs
+      for i in (0..trj[:n_humans]-1)
+          actor_velocities.push(trj[:actor_velocity])
+          idx = i;
+          human_traj=[]
+          for pt in (0..trj[:wpoints].length-1)
+             order= i+pt
+             if order > trj[:wpoints].length-1
+               order -= (trj[:wpoints].length)
+             end
+             human_traj.push(trj[:wpoints][order])
+          end
+          #here the human traj and velocity are assigned
+          actor_trajectories.push(human_traj)
+          total_walking_actors+=1
+     end
+end
+
+
+
+############# inialize sitting actors #############
+actors_sitting = []
+# Total number of sitting actors
+actors_sitting_count = $sitting_actor_pose.length
+
+#if config and config.key?('humans')
+#  if config['humans'].key?('sitting_count')
+#    actors_sitting_count = config['humans']['sitting_count']
+#  end
+#end
+
+for i in (1..actors_sitting_count)
+  actors_sitting.push(
+  {
+  :pose => $sitting_actor_pose[i-1],
+  :skin => skins.sample,
+  :anim => 'ANIMATION_sitting.dae',
+  })
+end
+
+
+
+
+
+
+
+############# inialize walking actors #############
+actors_trajectory = []
+$traj_start_poses = []
+
+# Total number of trajectory actors
+#traj_actor_count = 10
+#if config and config.key?('humans')
+#  if config['humans'].key?('walking_count')
+#   traj_actor_count = config['humans']['walking_count']
+#  end
+#end
+
+for i in (0..total_walking_actors-1)
+  actors_trajectory.push(
+  {
+    :skin => skins.sample,
+    :velocity => actor_velocities[i],
+    :anim => 'ANIMATION_walking.dae',
+    :trajectory => actor_trajectories[i],
+    :config_file => 'trajectory_1.erb',
+    :offset => rand(0..20)
+  })
+end
+%>
+
+
+
+
+
+
+
+<%#  ############# code generation #############  %>
+<?xml version="1.0" ?>
+<!-- Generated from actor_world_generator.erb -->
+<sdf version="1.6">
+  <world name="default">
+
+
+<!-- ############### Trajectory actors ############### -->
+<%
+  for actor in actors_trajectory
+    # unique name
+    $count = $count + 1
+    $actor_name = $human_name + '_' + rand(10000..99999).to_s()
+
+    $enable_collisions = true
+
+    # skin
+    $actor_skin = nil
+    if actor.has_key? :skin
+      $actor_skin = actor[:skin]
+    end
+
+    # animation
+    $actor_anim = nil
+    if actor.has_key? :anim
+      $actor_anim = actor[:anim]
+    end
+
+    # velocity
+    $actor_velocity = nil
+    if actor.has_key? :velocity
+      $actor_velocity = actor[:velocity]
+    end
+
+    # trajectory waypoints
+    $actor_trajectory = nil
+    if actor.has_key? :trajectory
+      $actor_trajectory = actor[:trajectory]
+    end
+
+    # trajectory offset
+    $traj_offset = nil
+    if actor.has_key? :offset
+      $traj_offset = actor[:offset]
+    end
+%>
+<%= fromFile(DIR + "/" + "walking_human_generator.erb") %>
+<% end %>
+
+
+
+
+
+
+
+
+
+<!-- ############### sitting actors ############### -->
+<%
+  for actor in actors_sitting
+    # unique name
+    $count = $count + 1
+    $actor_name = $human_name + '_' + rand(10000..99999).to_s()
+
+    #enable collision
+    $enable_collisions = true
+
+    # skin
+    $actor_skin = nil
+    if actor.has_key? :skin
+      $actor_skin = actor[:skin]
+    end
+
+    # animation
+    $actor_anim = nil
+    if actor.has_key? :anim
+      $actor_anim = actor[:anim]
+    end
+
+    # sitting coordinates/pose
+    $actor_pose = nil
+    if actor.has_key? :pose
+      $actor_pose = actor[:pose]
+    else
+        $actor_pose = [0,0, 0.2, 0.000000, 0.000000, 0.0];
+    end
+%>
+<%= fromFile(DIR + "/sitting_human_generator.erb") %>
+<% end %>
+
+
+
+
+<!-- ######### standing actors ########-->
+<%= fromFile(DIR + "/standing_humans_generator.erb") %>
+
+
+
+
+
+</world>
+</sdf>
+
+
+
