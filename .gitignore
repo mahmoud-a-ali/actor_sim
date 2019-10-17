@@ -1,5 +1,0 @@
-build
-logs
-devel
-.catkin_tools
-*.workspace 
